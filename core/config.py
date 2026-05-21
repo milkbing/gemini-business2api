@@ -57,6 +57,22 @@ def _normalize_temp_mail_provider(value: object, default: str = "duckmail") -> s
     return normalized
 
 
+def _normalize_model_list(values: object) -> List[str]:
+    if not isinstance(values, list):
+        return []
+
+    normalized_models: List[str] = []
+    seen: set[str] = set()
+    for value in values:
+        model = _to_clean_str(value)
+        if not model or model in seen:
+            continue
+        seen.add(model)
+        normalized_models.append(model)
+
+    return normalized_models
+
+
 def _model_dump(model: BaseModel) -> dict[str, object]:
     if hasattr(model, "model_dump"):
         return model.model_dump()
@@ -151,6 +167,10 @@ class ImageGenerationConfig(BaseModel):
     enabled: bool = Field(default=False, description="Enable image generation")
     supported_models: List[str] = Field(default=[], description="Models that support image generation")
     output_format: str = Field(default="base64", description="base64 or url")
+
+    @validator("supported_models", pre=True)
+    def validate_supported_models(cls, value: object) -> List[str]:
+        return _normalize_model_list(value)
 
     @validator("output_format")
     def validate_output_format(cls, value: str) -> str:
